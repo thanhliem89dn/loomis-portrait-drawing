@@ -7,7 +7,7 @@ const ITEMS: { key: keyof OverlayToggles; label: string; color: string }[] = [
   { key: 'browLine', label: 'Brow line', color: '#60a5fa' },
   { key: 'hairline', label: 'Hairline', color: '#a3e635' },
   { key: 'noseLine', label: 'Nose-base line', color: '#60a5fa' },
-  { key: 'mouthLine', label: 'Mouth line', color: '#60a5fa' },
+  { key: 'chinLine', label: 'Chin line', color: '#60a5fa' },
   { key: 'jaw', label: 'Jawline', color: '#f87171' },
   { key: 'ear', label: 'Ear', color: '#a78bfa' },
   { key: 'wireframe', label: 'Sphere wireframe', color: '#10b981' },

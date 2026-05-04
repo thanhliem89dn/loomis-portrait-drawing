@@ -8,8 +8,8 @@ import {
   hairlineRing,
   sidePlaneL,
   sidePlaneR,
-  noseBaseLine,
-  mouthLine,
+  buildNoseBaseLine,
+  buildChinLine,
   buildJawOutline,
   earL,
   earR,
@@ -76,12 +76,19 @@ function DepthLine({
   color,
   width,
   showBack = true,
+  noSplit = false,
 }: {
   pts: Vec2[]
   color: string
   width: number
   showBack?: boolean
+  noSplit?: boolean
 }) {
+  if (noSplit) {
+    return (
+      <path d={pathOf(pts)} fill="none" stroke={color} strokeWidth={width} opacity={0.95} strokeLinejoin="round" strokeLinecap="round" />
+    )
+  }
   const { front, back } = splitByDepth(pts)
   return (
     <>
@@ -97,7 +104,7 @@ function DepthLine({
         />
       ))}
       {front.map((seg, i) => (
-        <path key={`f${i}`} d={pathOf(seg)} fill="none" stroke={color} strokeWidth={width} opacity={0.95} />
+        <path key={`f${i}`} d={pathOf(seg)} fill="none" stroke={color} strokeWidth={width} opacity={0.95} strokeLinejoin="round" strokeLinecap="round" />
       ))}
     </>
   )
@@ -159,23 +166,33 @@ export function Overlay({ width, height }: Props) {
         <DepthLine pts={proj(browLine)} color={COLORS.brow} width={sw} />
       )}
 
-      {/* Nose-base */}
+      {/* Nose-base (locked to midpoint of brow → chin) */}
       {toggles.noseLine && (
-        <DepthLine pts={proj(noseBaseLine)} color={COLORS.nose} width={sw} showBack={false} />
+        <DepthLine
+          pts={proj(buildNoseBaseLine(transform.jawLength, transform.jawWidth))}
+          color={COLORS.nose}
+          width={sw}
+          showBack={false}
+        />
       )}
 
-      {/* Mouth */}
-      {toggles.mouthLine && (
-        <DepthLine pts={proj(mouthLine)} color={COLORS.mouth} width={sw} showBack={false} />
+      {/* Chin line */}
+      {toggles.chinLine && (
+        <DepthLine
+          pts={proj(buildChinLine(transform.jawLength, transform.jawWidth, transform.jawTaper))}
+          color={COLORS.mouth}
+          width={sw}
+          showBack={false}
+        />
       )}
 
-      {/* Jaw */}
+      {/* Jaw — always rendered as one continuous front-facing curve */}
       {toggles.jaw && (
         <DepthLine
           pts={proj(buildJawOutline(transform.jawWidth, transform.jawLength, transform.jawTaper))}
           color={COLORS.jaw}
           width={sw * 1.1}
-          showBack={false}
+          noSplit
         />
       )}
 

@@ -19,7 +19,7 @@ export type OverlayToggles = {
   browLine: boolean
   hairline: boolean
   noseLine: boolean
-  mouthLine: boolean
+  chinLine: boolean
   jaw: boolean
   ear: boolean
   wireframe: boolean
@@ -59,7 +59,7 @@ const defaultToggles: OverlayToggles = {
   browLine: true,
   hairline: false,
   noseLine: true,
-  mouthLine: true,
+  chinLine: true,
   jaw: true,
   ear: true,
   wireframe: false,

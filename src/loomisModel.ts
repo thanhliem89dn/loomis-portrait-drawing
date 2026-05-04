@@ -85,39 +85,51 @@ const SIDE_R = Math.sqrt(1 - SIDE_X * SIDE_X)
 export const sidePlaneR: Vec3[] = ringPoints(48, (t) => [-SIDE_X, SIDE_R * Math.cos(t), SIDE_R * Math.sin(t)])
 export const sidePlaneL: Vec3[] = ringPoints(48, (t) => [SIDE_X, SIDE_R * Math.cos(t), SIDE_R * Math.sin(t)])
 
-// Nose-base: line across the face at sphere bottom
-export const noseBaseLine: Vec3[] = [[-0.55, -1, 0.45], [0.55, -1, 0.45]]
+// Nose-base: horizontal across the face at the exact midpoint between brow and chin.
+// Brow sits at y=0, chin at y = -1 - jawLength. Midpoint = -(1 + jawLength)/2.
+export function buildNoseBaseLine(jawLength = 1, jawWidth = 1): Vec3[] {
+  const y = -(1 + jawLength) / 2
+  const halfW = 0.55 * jawWidth
+  return [[-halfW, y, 0.5], [halfW, y, 0.5]]
+}
 
-// Mouth: line halfway between nose-base and chin
-export const mouthLine: Vec3[] = [[-0.4, -1.45, 0.55], [0.4, -1.45, 0.55]]
+// Chin line: across the bottom of the jaw at the chin tip level.
+export function buildChinLine(jawLength = 1, jawWidth = 1, jawTaper = 0.5): Vec3[] {
+  const y = -(1 + jawLength)
+  const halfW = 0.35 * jawWidth * (1 - 0.6 * jawTaper)
+  return [[-halfW, y, 0.55], [halfW, y, 0.55]]
+}
 
-// Jaw outline: U-shape from where side planes meet sphere bottom, curving to chin.
-// Parameterized so users can dial in jaw width, length, and taper to fit any face.
+// Jaw outline: top corners are FIXED at the bottom intersection of each side plane
+// with the sphere (x=±SIDE_X, y=-SIDE_R). Width/length/taper only shape the curve
+// from those anchor points down to the chin.
 export function buildJawOutline(width = 1, length = 1, taper = 0.5): Vec3[] {
   const w = width
   const L = length
-  const t = taper // 0 = wide chin (rectangular), 1 = pointed chin
-  // Top corners attach to sphere bottom at the side-plane x positions.
-  // Walk down: jaw angle (where it bends), then curve to chin point.
-  const topX = SIDE_X * w
+  const t = taper // 0 = wide/square chin, 1 = pointed chin
+  // Anchored to the side-plane / sphere intersection — independent of jawWidth.
+  const topX = SIDE_X
+  const yTop = -SIDE_R
+  // Chin tip lands at the canonical position so brow→chin = 1 + jawLength face-units.
+  const yChin = -(1 + L)
+  const span = yTop - yChin
+  const yAngle = yTop - 0.35 * span
+  const yMid = yTop - 0.7 * span
+  const yChinSide = yTop - 0.93 * span
+  // Intermediate widths scale with jawWidth and chin taper
   const angleX = (SIDE_X - 0.05) * w * (1 - 0.1 * t)
   const midX = (SIDE_X - 0.2) * w * (1 - 0.45 * t)
   const chinSideX = (SIDE_X - 0.45) * w * (1 - 0.85 * t)
-  const yTop = -1
-  const yAngle = -1 - 0.4 * L
-  const yMid = -1 - 0.75 * L
-  const yChinSide = -1 - 0.95 * L
-  const yChin = -1 - 1.0 * L
   return [
-    [-topX, yTop, 0.4],
-    [-angleX, yAngle, 0.5],
-    [-midX, yMid, 0.55],
+    [-topX, yTop, 0.0],
+    [-angleX, yAngle, 0.4],
+    [-midX, yMid, 0.5],
     [-chinSideX, yChinSide, 0.55],
     [0, yChin, 0.55],
     [chinSideX, yChinSide, 0.55],
-    [midX, yMid, 0.55],
-    [angleX, yAngle, 0.5],
-    [topX, yTop, 0.4],
+    [midX, yMid, 0.5],
+    [angleX, yAngle, 0.4],
+    [topX, yTop, 0.0],
   ]
 }
 
