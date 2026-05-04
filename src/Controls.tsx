@@ -102,8 +102,11 @@ export function Controls() {
         <Slider label="Chin taper" value={transform.jawTaper} min={0} max={1} step={0.02} display={(v) => v.toFixed(2)} onChange={set('jawTaper')} />
       </div>
 
-      <div className="text-xs text-zinc-500 border-t border-zinc-800 pt-3">
-        Drag the head with your mouse to position. Scroll to resize.
+      <div className="text-xs text-zinc-500 border-t border-zinc-800 pt-3 leading-relaxed">
+        <div><span className="text-zinc-400">Drag</span> — move head</div>
+        <div><span className="text-zinc-400">Right-drag</span> or <span className="text-zinc-400">Alt-drag</span> — yaw / pitch</div>
+        <div><span className="text-zinc-400">Shift-drag</span> — roll</div>
+        <div><span className="text-zinc-400">Scroll</span> — resize</div>
       </div>
 
       <div className="flex flex-col gap-1 border-t border-zinc-800 pt-3">
