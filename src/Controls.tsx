@@ -62,11 +62,16 @@ export function Controls() {
   const toggle = useStore((s) => s.toggle)
   const transform = useStore((s) => s.transform)
   const setTransform = useStore((s) => s.setTransform)
+  const overlayAlpha = useStore((s) => s.overlayAlpha)
+  const setOverlayAlpha = useStore((s) => s.setOverlayAlpha)
+  const imageUrl = useStore((s) => s.imageUrl)
   const resetTransform = useStore((s) => s.resetTransform)
   const reset = useStore((s) => s.reset)
 
   const set = (k: keyof Transform) => (v: number) => setTransform({ [k]: v })
   const setDeg = (k: 'yaw' | 'pitch' | 'roll') => (deg: number) => setTransform({ [k]: deg * RAD })
+
+  const onExport = () => window.dispatchEvent(new CustomEvent('learndraw:export'))
 
   return (
     <div className="flex flex-col gap-4 p-4 bg-zinc-900/80 border border-zinc-800 rounded-2xl w-full overflow-y-auto">
@@ -100,6 +105,21 @@ export function Controls() {
         <Slider label="Jaw width" value={transform.jawWidth} min={0.4} max={1.4} step={0.02} display={(v) => v.toFixed(2)} onChange={set('jawWidth')} />
         <Slider label="Jaw length" value={transform.jawLength} min={0.4} max={1.6} step={0.02} display={(v) => v.toFixed(2)} onChange={set('jawLength')} />
         <Slider label="Chin taper" value={transform.jawTaper} min={0} max={1} step={0.02} display={(v) => v.toFixed(2)} onChange={set('jawTaper')} />
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-zinc-800 pt-3">
+        <div className="text-zinc-200 font-medium text-xs uppercase tracking-wide">Style</div>
+        <Slider label="Overlay opacity" value={overlayAlpha} min={0.1} max={1} step={0.02} display={(v) => v.toFixed(2)} onChange={setOverlayAlpha} />
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-zinc-800 pt-3">
+        <button
+          onClick={onExport}
+          disabled={!imageUrl}
+          className="w-full px-3 py-2 text-sm rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed text-white font-medium transition-colors"
+        >
+          Export PNG
+        </button>
       </div>
 
       <div className="text-xs text-zinc-500 border-t border-zinc-800 pt-3 leading-relaxed">

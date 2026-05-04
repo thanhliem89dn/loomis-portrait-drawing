@@ -113,6 +113,7 @@ function DepthLine({
 export function Overlay({ width, height }: Props) {
   const transform = useStore((s) => s.transform)
   const toggles = useStore((s) => s.toggles)
+  const overlayAlpha = useStore((s) => s.overlayAlpha)
   if (width === 0 || height === 0) return null
 
   const cx = transform.x * width
@@ -123,7 +124,12 @@ export function Overlay({ width, height }: Props) {
   const proj = (pts: Vec3[]) => projectLine(pts, transform.yaw, transform.pitch, transform.roll, cx, cy, ppu)
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="absolute inset-0 w-full h-full pointer-events-none">
+    <svg
+      id="loomis-overlay"
+      viewBox={`0 0 ${width} ${height}`}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ opacity: overlayAlpha }}
+    >
       {/* Wireframe sphere */}
       {toggles.wireframe &&
         sphereWireframe(6, 8).map((line, i) => (

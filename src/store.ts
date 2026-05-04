@@ -32,9 +32,11 @@ type AppState = {
   errorMessage: string | null
   transform: Transform
   toggles: OverlayToggles
+  overlayAlpha: number // 0-1, master opacity for all overlay lines
   setImage: (url: string, el: HTMLImageElement) => void
   setStatus: (s: AppState['status'], err?: string | null) => void
   setTransform: (t: Partial<Transform>) => void
+  setOverlayAlpha: (a: number) => void
   toggle: (key: keyof OverlayToggles) => void
   resetTransform: () => void
   reset: () => void
@@ -72,9 +74,11 @@ export const useStore = create<AppState>((set) => ({
   errorMessage: null,
   transform: defaultTransform,
   toggles: defaultToggles,
+  overlayAlpha: 0.95,
   setImage: (imageUrl, imageEl) => set({ imageUrl, imageEl, status: 'ready', errorMessage: null }),
   setStatus: (status, errorMessage = null) => set({ status, errorMessage }),
   setTransform: (t) => set((s) => ({ transform: { ...s.transform, ...t } })),
+  setOverlayAlpha: (overlayAlpha) => set({ overlayAlpha }),
   toggle: (key) => set((s) => ({ toggles: { ...s.toggles, [key]: !s.toggles[key] } })),
   resetTransform: () => set({ transform: defaultTransform }),
   reset: () => set({ imageUrl: null, imageEl: null, status: 'idle', errorMessage: null, transform: defaultTransform }),

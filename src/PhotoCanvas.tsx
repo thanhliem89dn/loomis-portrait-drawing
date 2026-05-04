@@ -30,6 +30,61 @@ export function PhotoCanvas() {
     return () => ro.disconnect()
   }, [])
 
+  const imageEl = useStore((s) => s.imageEl)
+
+  useEffect(() => {
+    const handleExport = async () => {
+      const c = containerRef.current
+      const svg = document.getElementById('loomis-overlay') as SVGSVGElement | null
+      if (!c || !imageEl || !svg) return
+
+      const w = c.clientWidth
+      const h = c.clientHeight
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')!
+
+      ctx.fillStyle = '#0a0a0b'
+      ctx.fillRect(0, 0, w, h)
+
+      // Reproduce object-contain placement
+      const ar = imageEl.naturalWidth / imageEl.naturalHeight
+      const containerAR = w / h
+      let dw: number, dh: number, dx: number, dy: number
+      if (ar > containerAR) {
+        dw = w; dh = w / ar; dx = 0; dy = (h - dh) / 2
+      } else {
+        dh = h; dw = h * ar; dx = (w - dw) / 2; dy = 0
+      }
+      ctx.drawImage(imageEl, dx, dy, dw, dh)
+
+      // Serialize and rasterize the live SVG (preserves current transform/toggles/alpha)
+      const clone = svg.cloneNode(true) as SVGSVGElement
+      if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+      clone.setAttribute('width', String(w))
+      clone.setAttribute('height', String(h))
+      const svgStr = new XMLSerializer().serializeToString(clone)
+      const svgUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr)
+      const svgImg = new Image()
+      svgImg.src = svgUrl
+      await svgImg.decode()
+      ctx.drawImage(svgImg, 0, 0, w, h)
+
+      canvas.toBlob((blob) => {
+        if (!blob) return
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `learndraw-loomis-${Date.now()}.png`
+        a.click()
+        URL.revokeObjectURL(url)
+      }, 'image/png')
+    }
+    window.addEventListener('learndraw:export', handleExport)
+    return () => window.removeEventListener('learndraw:export', handleExport)
+  }, [imageEl])
+
   const pickMode = (e: React.PointerEvent): DragMode => {
     // Right-click or middle-click → rotate yaw/pitch
     if (e.button === 2 || e.button === 1) return 'rotate'
