@@ -1,4 +1,4 @@
-import { useStore, PAPER_DIMS, type OverlayToggles, type PaperSize, type Transform } from './store'
+import { useStore, PAPER_DIMS, type ImageMode, type OverlayToggles, type PaperSize, type Transform } from './store'
 
 const ITEMS: { key: keyof OverlayToggles; label: string; color: string }[] = [
   { key: 'ball', label: 'Cranium ball', color: '#34d399' },
@@ -71,6 +71,8 @@ export function Controls() {
   const setGrid = useStore((s) => s.setGrid)
   const paper = useStore((s) => s.paper)
   const setPaper = useStore((s) => s.setPaper)
+  const imageMode = useStore((s) => s.imageMode)
+  const setImageMode = useStore((s) => s.setImageMode)
   const resetTransform = useStore((s) => s.resetTransform)
   const reset = useStore((s) => s.reset)
 
@@ -115,6 +117,26 @@ export function Controls() {
         <Slider label="Jaw width" value={transform.jawWidth} min={0.4} max={1.4} step={0.02} display={(v) => v.toFixed(2)} onChange={set('jawWidth')} />
         <Slider label="Jaw length" value={transform.jawLength} min={0.4} max={1.6} step={0.02} display={(v) => v.toFixed(2)} onChange={set('jawLength')} />
         <Slider label="Chin taper" value={transform.jawTaper} min={0} max={1} step={0.02} display={(v) => v.toFixed(2)} onChange={set('jawTaper')} />
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-zinc-800 pt-3">
+        <div className="flex items-center justify-between">
+          <div className="text-zinc-200 font-medium text-xs uppercase tracking-wide">Image filter</div>
+          <select
+            value={imageMode}
+            onChange={(e) => setImageMode(e.target.value as ImageMode)}
+            className="text-xs bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-200"
+          >
+            <option value="color">Color (original)</option>
+            <option value="grayscale">Grayscale</option>
+            <option value="pencil">Pencil sketch</option>
+          </select>
+        </div>
+        {imageMode === 'pencil' && (
+          <div className="text-xs text-zinc-500 leading-relaxed">
+            Dodge-blend pencil effect — emphasizes tonal values for shading practice.
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3 border-t border-zinc-800 pt-3">

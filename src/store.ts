@@ -33,6 +33,8 @@ export type GridSettings = {
 
 export type PaperSize = 'none' | 'A5' | 'A4' | 'A3'
 
+export type ImageMode = 'color' | 'grayscale' | 'pencil'
+
 export const PAPER_DIMS: Record<Exclude<PaperSize, 'none'>, { short: number; long: number }> = {
   A5: { short: 148, long: 210 },
   A4: { short: 210, long: 297 },
@@ -48,12 +50,14 @@ type AppState = {
   overlayAlpha: number // 0-1, master opacity for all overlay lines
   grid: GridSettings
   paper: PaperSize
+  imageMode: ImageMode
   setImage: (url: string, el: HTMLImageElement) => void
   setError: (msg: string | null) => void
   setTransform: (t: Partial<Transform>) => void
   setOverlayAlpha: (a: number) => void
   setGrid: (g: Partial<GridSettings>) => void
   setPaper: (p: PaperSize) => void
+  setImageMode: (m: ImageMode) => void
   toggle: (key: keyof OverlayToggles) => void
   resetTransform: () => void
   reset: () => void
@@ -99,6 +103,7 @@ export const useStore = create<AppState>((set) => ({
   overlayAlpha: 0.95,
   grid: defaultGrid,
   paper: 'none' as PaperSize,
+  imageMode: 'color' as ImageMode,
   setImage: (imageUrl, imageEl) =>
     set((s) => {
       // Revoke previous blob URL so we don't leak object URLs across uploads.
@@ -110,6 +115,7 @@ export const useStore = create<AppState>((set) => ({
   setOverlayAlpha: (overlayAlpha) => set({ overlayAlpha }),
   setGrid: (g) => set((s) => ({ grid: { ...s.grid, ...g } })),
   setPaper: (paper) => set({ paper }),
+  setImageMode: (imageMode) => set({ imageMode }),
   toggle: (key) => set((s) => ({ toggles: { ...s.toggles, [key]: !s.toggles[key] } })),
   resetTransform: () => set({ transform: defaultTransform }),
   reset: () =>

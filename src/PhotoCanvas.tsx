@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore, PAPER_DIMS, type PaperSize } from './store'
 import { Overlay } from './Overlay'
+import { processImage } from './imageProcessor'
 
 export type ImageRect = { x: number; y: number; w: number; h: number }
 
@@ -36,17 +37,55 @@ const RAD_PER_PX = Math.PI / 200 // ~180° drag across 400px
 export function PhotoCanvas() {
   const imageUrl = useStore((s) => s.imageUrl)
   const imageEl = useStore((s) => s.imageEl)
+  const imageMode = useStore((s) => s.imageMode)
   const transform = useStore((s) => s.transform)
   const setTransform = useStore((s) => s.setTransform)
   const setError = useStore((s) => s.setError)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
+  const [displayImg, setDisplayImg] = useState<HTMLImageElement | null>(null)
+  const [displayUrl, setDisplayUrl] = useState<string | null>(null)
   const paper = useStore((s) => s.paper)
   const imageRect = useMemo(
     () => computeDisplayRect(imageEl, size.w, size.h, paper),
     [imageEl, size.w, size.h, paper],
   )
+
+  // Re-process the image whenever the source or mode changes.
+  useEffect(() => {
+    if (!imageEl) {
+      setDisplayImg(null)
+      setDisplayUrl(null)
+      return
+    }
+    if (imageMode === 'color') {
+      setDisplayImg(imageEl)
+      setDisplayUrl(imageEl.src)
+      return
+    }
+    let cancelled = false
+    let createdUrl: string | null = null
+    processImage(imageEl, imageMode)
+      .then((processed) => {
+        if (cancelled) {
+          if (processed.src.startsWith('blob:')) URL.revokeObjectURL(processed.src)
+          return
+        }
+        createdUrl = processed.src
+        setDisplayImg(processed)
+        setDisplayUrl(processed.src)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Image filter failed')
+        }
+      })
+    return () => {
+      cancelled = true
+      if (createdUrl && createdUrl.startsWith('blob:')) URL.revokeObjectURL(createdUrl)
+    }
+  }, [imageEl, imageMode, setError])
   const drag = useRef<{
     mode: DragMode
     startX: number
@@ -68,7 +107,8 @@ export function PhotoCanvas() {
     const handleExport = async () => {
       const c = containerRef.current
       const svg = document.getElementById('loomis-overlay') as SVGSVGElement | null
-      if (!c || !imageEl || !svg) return
+      const sourceImg = displayImg ?? imageEl
+      if (!c || !sourceImg || !svg) return
 
       try {
         const w = c.clientWidth
@@ -84,12 +124,12 @@ export function PhotoCanvas() {
 
         // Match the on-screen layout: outer rect = display rect (paper or image),
         // image fits inside via object-contain.
-        const outer = computeDisplayRect(imageEl, w, h, paper) ?? { x: 0, y: 0, w, h }
-        if (paper !== 'none') {
+        const outer = computeDisplayRect(sourceImg, w, h, paper) ?? { x: 0, y: 0, w, h }
+        if (paper !== 'none' || imageMode !== 'color') {
           ctx.fillStyle = '#ffffff'
           ctx.fillRect(outer.x, outer.y, outer.w, outer.h)
         }
-        const ar = imageEl.naturalWidth / imageEl.naturalHeight
+        const ar = sourceImg.naturalWidth / sourceImg.naturalHeight
         const outerAR = outer.w / outer.h
         let dw: number, dh: number, dx: number, dy: number
         if (ar > outerAR) {
@@ -99,7 +139,7 @@ export function PhotoCanvas() {
           dh = outer.h; dw = outer.h * ar
           dx = outer.x + (outer.w - dw) / 2; dy = outer.y
         }
-        ctx.drawImage(imageEl, dx, dy, dw, dh)
+        ctx.drawImage(sourceImg, dx, dy, dw, dh)
 
         // Serialize and rasterize the live SVG (preserves current transform/toggles/alpha)
         const clone = svg.cloneNode(true) as SVGSVGElement
@@ -136,7 +176,7 @@ export function PhotoCanvas() {
     }
     window.addEventListener('learndraw:export', handleExport)
     return () => window.removeEventListener('learndraw:export', handleExport)
-  }, [imageEl, paper, setError])
+  }, [imageEl, displayImg, imageMode, paper, setError])
 
   const pickMode = (e: React.PointerEvent): DragMode => {
     // Right-click or middle-click → rotate yaw/pitch
@@ -208,7 +248,7 @@ export function PhotoCanvas() {
     >
       {imageUrl ? (
         <>
-          {imageRect && (
+          {imageRect && displayUrl && (
             <div
               style={{
                 position: 'absolute',
@@ -216,11 +256,11 @@ export function PhotoCanvas() {
                 top: imageRect.y,
                 width: imageRect.w,
                 height: imageRect.h,
-                background: paper !== 'none' ? '#ffffff' : 'transparent',
+                background: paper !== 'none' || imageMode !== 'color' ? '#ffffff' : 'transparent',
               }}
             >
               <img
-                src={imageUrl}
+                src={displayUrl}
                 alt=""
                 className="absolute inset-0 w-full h-full object-contain select-none"
                 draggable={false}
