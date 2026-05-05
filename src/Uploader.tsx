@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { useStore } from './store'
 
-const TEST_IMAGE_URL = '/test-portrait.webp'
+const TEST_IMAGE_URL = `${import.meta.env.BASE_URL}test-portrait.webp`
 
 export function Uploader() {
   const [dragOver, setDragOver] = useState(false)
