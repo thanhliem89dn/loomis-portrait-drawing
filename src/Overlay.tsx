@@ -17,16 +17,19 @@ import {
   type ScreenPt,
 } from './loomisModel'
 
+// Monochrome layer palette (Nothing aesthetic). Centerline is the only color
+// because it represents the head's mirror plane — the most fundamental
+// construction line.
 const COLORS = {
-  ball: '#34d399',
-  sidePlane: '#fbbf24',
-  centerline: '#f472b6',
-  brow: '#60a5fa',
-  hairline: '#a3e635',
-  feature: '#60a5fa', // shared color for nose-base and chin lines
-  jaw: '#f87171',
-  ear: '#a78bfa',
-  wireframe: '#10b981',
+  ball: '#ffffff',
+  sidePlane: '#a3a3a3',
+  centerline: '#ff3b30',
+  brow: '#ffffff',
+  hairline: '#a3a3a3',
+  feature: '#d4d4d4',
+  jaw: '#ffffff',
+  ear: '#737373',
+  wireframe: '#525252',
 }
 
 type ImageRect = { x: number; y: number; w: number; h: number }

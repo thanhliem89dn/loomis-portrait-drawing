@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore, PAPER_DIMS, type PaperSize } from './store'
 import { Overlay } from './Overlay'
 import { processImage } from './imageProcessor'
+import { detectFace } from './landmarker'
+import { computeAutoFitTransform } from './autoFit'
 
 export type ImageRect = { x: number; y: number; w: number; h: number }
 
@@ -41,6 +43,7 @@ export function PhotoCanvas() {
   const transform = useStore((s) => s.transform)
   const setTransform = useStore((s) => s.setTransform)
   const setError = useStore((s) => s.setError)
+  const setAutoFitting = useStore((s) => s.setAutoFitting)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
@@ -178,6 +181,33 @@ export function PhotoCanvas() {
     return () => window.removeEventListener('learndraw:export', handleExport)
   }, [imageEl, displayImg, imageMode, paper, setError])
 
+  useEffect(() => {
+    const handleAutoFit = async () => {
+      const c = containerRef.current
+      // Always run detection on the original color image — filters can drop
+      // the contrast that landmark detection relies on.
+      if (!c || !imageEl || !imageRect) return
+      setAutoFitting(true)
+      setError(null)
+      try {
+        const face = await detectFace(imageEl)
+        if (!face) {
+          setError('No face detected — try a clearer portrait.')
+          return
+        }
+        const t = computeAutoFitTransform(face, imageRect, c.clientWidth, c.clientHeight)
+        setTransform(t)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Auto-fit failed'
+        setError(`Auto-fit failed: ${msg}`)
+      } finally {
+        setAutoFitting(false)
+      }
+    }
+    window.addEventListener('learndraw:auto-fit', handleAutoFit)
+    return () => window.removeEventListener('learndraw:auto-fit', handleAutoFit)
+  }, [imageEl, imageRect, setTransform, setError, setAutoFitting])
+
   const pickMode = (e: React.PointerEvent): DragMode => {
     // Right-click or middle-click → rotate yaw/pitch
     if (e.button === 2 || e.button === 1) return 'rotate'
@@ -237,7 +267,7 @@ export function PhotoCanvas() {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full bg-zinc-950 rounded-2xl border border-zinc-800 overflow-hidden cursor-grab active:cursor-grabbing"
+      className="relative w-full h-full bg-[var(--color-bg)] overflow-hidden cursor-grab active:cursor-grabbing"
       style={{ touchAction: 'none' }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -270,7 +300,7 @@ export function PhotoCanvas() {
           <Overlay width={size.w} height={size.h} imageRect={imageRect} />
         </>
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-zinc-600 text-sm">
+        <div className="w-full h-full flex items-center justify-center text-[var(--color-mute)] font-mono text-[11px] tracking-[0.12em] uppercase">
           No image loaded
         </div>
       )}

@@ -51,6 +51,7 @@ type AppState = {
   grid: GridSettings
   paper: PaperSize
   imageMode: ImageMode
+  autoFitting: boolean
   setImage: (url: string, el: HTMLImageElement) => void
   setError: (msg: string | null) => void
   setTransform: (t: Partial<Transform>) => void
@@ -58,6 +59,7 @@ type AppState = {
   setGrid: (g: Partial<GridSettings>) => void
   setPaper: (p: PaperSize) => void
   setImageMode: (m: ImageMode) => void
+  setAutoFitting: (b: boolean) => void
   toggle: (key: keyof OverlayToggles) => void
   resetTransform: () => void
   reset: () => void
@@ -104,6 +106,7 @@ export const useStore = create<AppState>((set) => ({
   grid: defaultGrid,
   paper: 'none' as PaperSize,
   imageMode: 'color' as ImageMode,
+  autoFitting: false,
   setImage: (imageUrl, imageEl) =>
     set((s) => {
       // Revoke previous blob URL so we don't leak object URLs across uploads.
@@ -116,6 +119,7 @@ export const useStore = create<AppState>((set) => ({
   setGrid: (g) => set((s) => ({ grid: { ...s.grid, ...g } })),
   setPaper: (paper) => set({ paper }),
   setImageMode: (imageMode) => set({ imageMode }),
+  setAutoFitting: (autoFitting) => set({ autoFitting }),
   toggle: (key) => set((s) => ({ toggles: { ...s.toggles, [key]: !s.toggles[key] } })),
   resetTransform: () => set({ transform: defaultTransform }),
   reset: () =>

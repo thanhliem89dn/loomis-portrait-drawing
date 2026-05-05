@@ -7,23 +7,28 @@ export default function App() {
   const imageUrl = useStore((s) => s.imageUrl)
 
   return (
-    <div className="h-full w-full flex flex-col">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
-        <div>
-          <h1 className="text-zinc-100 text-lg font-semibold">LearnDraw</h1>
-          <p className="text-zinc-500 text-xs">Loomis-method portrait construction overlay</p>
+    <div className="h-full w-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
+      <header className="flex items-center justify-between px-6 h-14 border-b border-[var(--color-line)]">
+        <div className="flex items-center gap-3">
+          <span className="w-1.5 h-1.5 bg-[var(--color-accent)]" />
+          <h1 className="font-mono text-sm font-medium tracking-[0.12em] uppercase text-[var(--color-fg)]">
+            LearnDraw
+          </h1>
+        </div>
+        <div className="font-mono text-[10px] tracking-[0.12em] uppercase text-[var(--color-mute)]">
+          v0.1 / Loomis · Grid · Pencil
         </div>
       </header>
 
-      <main className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_340px] gap-4 p-4 min-h-0">
-        <section className="min-h-[400px] h-full">
+      <main className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_360px] min-h-0">
+        <section className="min-h-[400px] h-full border-r border-[var(--color-line)]">
           {imageUrl ? <PhotoCanvas /> : <Uploader />}
         </section>
-        <aside className="flex flex-col gap-4 min-h-0 overflow-y-auto">
+        <aside className="flex flex-col min-h-0 overflow-y-auto">
           <Controls />
           {imageUrl && (
-            <div className="p-4 bg-zinc-900/80 border border-zinc-800 rounded-2xl">
-              <Uploader />
+            <div className="border-t border-[var(--color-line)]">
+              <Uploader compact />
             </div>
           )}
         </aside>

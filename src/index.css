@@ -1,12 +1,143 @@
 @import "tailwindcss";
 
+/* Nothing-inspired design tokens. */
+@theme {
+  --color-bg: #0a0a0a;
+  --color-surface: #111111;
+  --color-line: #262626;
+  --color-mute: #666666;
+  --color-text: #e5e5e5;
+  --color-fg: #ffffff;
+  --color-accent: #ff3b30;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
 html, body, #root {
   height: 100%;
 }
 
 body {
   margin: 0;
-  background: #0b0b0c;
-  color: #e7e7ea;
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01" on, "cv11" on;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Mono numeric readouts everywhere by default for any element with .num */
+.num, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* Native form controls — strip default chrome so we can restyle. */
+select {
+  appearance: none;
+  background-image: none;
+}
+
+/* Range input: thin track, square thumb, monochrome. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 1.25rem;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--color-line);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  background: var(--color-fg);
+  border: 1px solid var(--color-fg);
+  margin-top: -5px;
+  border-radius: 0;
+  transition: background 120ms ease-out, border-color 120ms ease-out;
+}
+input[type="range"]:active::-webkit-slider-thumb,
+input[type="range"]:focus::-webkit-slider-thumb {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+input[type="range"]::-moz-range-track {
+  height: 1px;
+  background: var(--color-line);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  background: var(--color-fg);
+  border: 1px solid var(--color-fg);
+  border-radius: 0;
+  transition: background 120ms ease-out, border-color 120ms ease-out;
+}
+
+/* Native checkbox — square outline, white-fill on check. */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--color-line);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color 120ms ease-out, background 120ms ease-out;
+}
+input[type="checkbox"]:hover { border-color: var(--color-mute); }
+input[type="checkbox"]:checked {
+  background: var(--color-fg);
+  border-color: var(--color-fg);
+}
+input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  background: var(--color-bg);
+}
+
+/* Reusable button skin — outlined, mono, uppercase. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--color-line);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out;
+}
+.btn:hover:not(:disabled) {
+  background: var(--color-fg);
+  color: var(--color-bg);
+  border-color: var(--color-fg);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-accent {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.btn-accent:hover:not(:disabled) {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border-color: var(--color-accent);
+}
+.btn-block { width: 100%; height: 36px; }
