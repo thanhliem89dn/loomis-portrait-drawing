@@ -3,7 +3,8 @@
 // Brow line at y=0; crown at y=+1; nose-base at y=-1; chin at y=-2.
 
 export type Vec3 = [number, number, number]
-export type Vec2 = { x: number; y: number; z: number }
+// 2D screen point with z preserved for depth-sorting front vs back facing segments.
+export type ScreenPt = { x: number; y: number; z: number }
 
 export function rot(p: Vec3, yaw: number, pitch: number, roll: number): Vec3 {
   let [x, y, z] = p
@@ -27,7 +28,7 @@ export function project(
   cx: number,
   cy: number,
   pixelsPerUnit: number,
-): Vec2 {
+): ScreenPt {
   return {
     x: cx + p[0] * pixelsPerUnit,
     y: cy - p[1] * pixelsPerUnit, // flip y for screen coords
@@ -106,17 +107,14 @@ export function buildChinLine(jawLength = 1, jawWidth = 1, jawTaper = 0.5): Vec3
 export function buildJawOutline(width = 1, length = 1, taper = 0.5): Vec3[] {
   const w = width
   const L = length
-  const t = taper // 0 = wide/square chin, 1 = pointed chin
-  // Anchored to the side-plane / sphere intersection — independent of jawWidth.
+  const t = taper
   const topX = SIDE_X
   const yTop = -SIDE_R
-  // Chin tip lands at the canonical position so brow→chin = 1 + jawLength face-units.
   const yChin = -(1 + L)
   const span = yTop - yChin
   const yAngle = yTop - 0.35 * span
   const yMid = yTop - 0.7 * span
   const yChinSide = yTop - 0.93 * span
-  // Intermediate widths scale with jawWidth and chin taper
   const angleX = (SIDE_X - 0.05) * w * (1 - 0.1 * t)
   const midX = (SIDE_X - 0.2) * w * (1 - 0.45 * t)
   const chinSideX = (SIDE_X - 0.45) * w * (1 - 0.85 * t)
@@ -133,8 +131,9 @@ export function buildJawOutline(width = 1, length = 1, taper = 0.5): Vec3[] {
   ]
 }
 
-export const jawOutline = buildJawOutline()
-
 // Ear: vertical bar on side plane between brow and nose-base
 export const earR: Vec3[] = [[-SIDE_X, 0, -0.15], [-SIDE_X, -SIDE_R + 0.05, -0.15]]
 export const earL: Vec3[] = [[SIDE_X, 0, -0.15], [SIDE_X, -SIDE_R + 0.05, -0.15]]
+
+// Pre-built sphere wireframe; topology is fixed so build it once at module load.
+export const SPHERE_WIREFRAME: Vec3[][] = sphereWireframe(6, 8)

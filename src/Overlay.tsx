@@ -2,7 +2,7 @@ import { useStore } from './store'
 import {
   rot,
   project,
-  sphereWireframe,
+  SPHERE_WIREFRAME,
   browLine,
   centerlineCircle,
   hairlineRing,
@@ -14,7 +14,7 @@ import {
   earL,
   earR,
   type Vec3,
-  type Vec2,
+  type ScreenPt,
 } from './loomisModel'
 
 const COLORS = {
@@ -23,14 +23,14 @@ const COLORS = {
   centerline: '#f472b6',
   brow: '#60a5fa',
   hairline: '#a3e635',
-  nose: '#60a5fa',
-  mouth: '#60a5fa',
+  feature: '#60a5fa', // shared color for nose-base and chin lines
   jaw: '#f87171',
   ear: '#a78bfa',
   wireframe: '#10b981',
 }
 
-type Props = { width: number; height: number }
+type ImageRect = { x: number; y: number; w: number; h: number }
+type Props = { width: number; height: number; imageRect: ImageRect | null }
 
 function projectLine(
   pts: Vec3[],
@@ -40,16 +40,16 @@ function projectLine(
   cx: number,
   cy: number,
   ppu: number,
-): Vec2[] {
+): ScreenPt[] {
   return pts.map((p) => project(rot(p, yaw, pitch, roll), cx, cy, ppu))
 }
 
 // Split a polyline into front-facing (z>=0) and back-facing (z<0) segments.
-function splitByDepth(pts: Vec2[]): { front: Vec2[][]; back: Vec2[][] } {
-  const front: Vec2[][] = []
-  const back: Vec2[][] = []
-  let curFront: Vec2[] = []
-  let curBack: Vec2[] = []
+function splitByDepth(pts: ScreenPt[]): { front: ScreenPt[][]; back: ScreenPt[][] } {
+  const front: ScreenPt[][] = []
+  const back: ScreenPt[][] = []
+  let curFront: ScreenPt[] = []
+  let curBack: ScreenPt[] = []
   for (const p of pts) {
     if (p.z >= 0) {
       if (curBack.length) { back.push(curBack); curBack = [] }
@@ -64,7 +64,7 @@ function splitByDepth(pts: Vec2[]): { front: Vec2[][]; back: Vec2[][] } {
   return { front, back }
 }
 
-function pathOf(pts: Vec2[]): string {
+function pathOf(pts: ScreenPt[]): string {
   if (pts.length === 0) return ''
   let d = `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`
   for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x.toFixed(2)} ${pts[i].y.toFixed(2)}`
@@ -78,7 +78,7 @@ function DepthLine({
   showBack = true,
   noSplit = false,
 }: {
-  pts: Vec2[]
+  pts: ScreenPt[]
   color: string
   width: number
   showBack?: boolean
@@ -110,11 +110,14 @@ function DepthLine({
   )
 }
 
-export function Overlay({ width, height }: Props) {
+export function Overlay({ width, height, imageRect }: Props) {
   const transform = useStore((s) => s.transform)
   const toggles = useStore((s) => s.toggles)
   const overlayAlpha = useStore((s) => s.overlayAlpha)
+  const grid = useStore((s) => s.grid)
   if (width === 0 || height === 0) return null
+
+  const gridStroke = Math.max(1, height * 0.0022)
 
   const cx = transform.x * width
   const cy = transform.y * height
@@ -130,9 +133,60 @@ export function Overlay({ width, height }: Props) {
       className="absolute inset-0 w-full h-full pointer-events-none"
       style={{ opacity: overlayAlpha }}
     >
+      {/* Grid (drawing aid) — square cells, count along the short side */}
+      {grid.enabled && imageRect && (() => {
+        const shortSide = Math.min(imageRect.w, imageRect.h)
+        const cellSize = shortSide / grid.cells
+        const colCount = Math.floor(imageRect.w / cellSize)
+        const rowCount = Math.floor(imageRect.h / cellSize)
+        // Anchor grid at the top-left of the paper; any leftover sits at right/bottom.
+        const x0 = imageRect.x
+        const y0 = imageRect.y
+        const w = colCount * cellSize
+        const h = rowCount * cellSize
+        return (
+          <g>
+            <rect
+              x={x0}
+              y={y0}
+              width={w}
+              height={h}
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth={gridStroke}
+              opacity={0.9}
+            />
+            {Array.from({ length: colCount - 1 }, (_, i) => {
+              const x = x0 + (i + 1) * cellSize
+              return (
+                <line key={`gv${i}`} x1={x} y1={y0} x2={x} y2={y0 + h}
+                  stroke="#ffffff" strokeWidth={gridStroke} opacity={0.55} />
+              )
+            })}
+            {Array.from({ length: rowCount - 1 }, (_, i) => {
+              const y = y0 + (i + 1) * cellSize
+              return (
+                <line key={`gh${i}`} x1={x0} y1={y} x2={x0 + w} y2={y}
+                  stroke="#ffffff" strokeWidth={gridStroke} opacity={0.55} />
+              )
+            })}
+            {grid.diagonals && (
+              <>
+                <line x1={x0} y1={y0} x2={x0 + w} y2={y0 + h}
+                  stroke="#ffffff" strokeWidth={gridStroke} opacity={0.45}
+                  strokeDasharray={`${gridStroke * 4} ${gridStroke * 3}`} />
+                <line x1={x0 + w} y1={y0} x2={x0} y2={y0 + h}
+                  stroke="#ffffff" strokeWidth={gridStroke} opacity={0.45}
+                  strokeDasharray={`${gridStroke * 4} ${gridStroke * 3}`} />
+              </>
+            )}
+          </g>
+        )
+      })()}
+
       {/* Wireframe sphere */}
       {toggles.wireframe &&
-        sphereWireframe(6, 8).map((line, i) => (
+        SPHERE_WIREFRAME.map((line, i) => (
           <DepthLine key={`wf${i}`} pts={proj(line)} color={COLORS.wireframe} width={sw * 0.5} />
         ))}
 
@@ -176,7 +230,7 @@ export function Overlay({ width, height }: Props) {
       {toggles.noseLine && (
         <DepthLine
           pts={proj(buildNoseBaseLine(transform.jawLength, transform.jawWidth))}
-          color={COLORS.nose}
+          color={COLORS.feature}
           width={sw}
           showBack={false}
         />
@@ -186,7 +240,7 @@ export function Overlay({ width, height }: Props) {
       {toggles.chinLine && (
         <DepthLine
           pts={proj(buildChinLine(transform.jawLength, transform.jawWidth, transform.jawTaper))}
-          color={COLORS.mouth}
+          color={COLORS.feature}
           width={sw}
           showBack={false}
         />

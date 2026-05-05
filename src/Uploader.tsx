@@ -7,7 +7,7 @@ export function Uploader() {
   const [dragOver, setDragOver] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const setImage = useStore((s) => s.setImage)
-  const setStatus = useStore((s) => s.setStatus)
+  const setError = useStore((s) => s.setError)
 
   const loadFromUrl = useCallback(
     async (url: string) => {
@@ -17,12 +17,12 @@ export function Uploader() {
       try {
         await img.decode()
       } catch {
-        setStatus('error', 'Could not decode image')
+        setError('Could not decode image')
         return
       }
       setImage(url, img)
     },
-    [setImage, setStatus],
+    [setImage, setError],
   )
 
   const handleFile = useCallback(

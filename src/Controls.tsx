@@ -1,4 +1,4 @@
-import { useStore, type OverlayToggles, type Transform } from './store'
+import { useStore, PAPER_DIMS, type OverlayToggles, type PaperSize, type Transform } from './store'
 
 const ITEMS: { key: keyof OverlayToggles; label: string; color: string }[] = [
   { key: 'ball', label: 'Cranium ball', color: '#34d399' },
@@ -65,8 +65,18 @@ export function Controls() {
   const overlayAlpha = useStore((s) => s.overlayAlpha)
   const setOverlayAlpha = useStore((s) => s.setOverlayAlpha)
   const imageUrl = useStore((s) => s.imageUrl)
+  const errorMessage = useStore((s) => s.errorMessage)
+  const setError = useStore((s) => s.setError)
+  const grid = useStore((s) => s.grid)
+  const setGrid = useStore((s) => s.setGrid)
+  const paper = useStore((s) => s.paper)
+  const setPaper = useStore((s) => s.setPaper)
   const resetTransform = useStore((s) => s.resetTransform)
   const reset = useStore((s) => s.reset)
+
+  // When a paper is selected, the grid divides the SHORT side into `cells` square cells,
+  // so each cell's physical size in mm is paper.short / cells.
+  const cellMm = paper === 'none' ? null : PAPER_DIMS[paper].short / grid.cells
 
   const set = (k: keyof Transform) => (v: number) => setTransform({ [k]: v })
   const setDeg = (k: 'yaw' | 'pitch' | 'roll') => (deg: number) => setTransform({ [k]: deg * RAD })
@@ -108,6 +118,66 @@ export function Controls() {
       </div>
 
       <div className="flex flex-col gap-3 border-t border-zinc-800 pt-3">
+        <div className="flex items-center justify-between">
+          <div className="text-zinc-200 font-medium text-xs uppercase tracking-wide">Paper</div>
+          <select
+            value={paper}
+            onChange={(e) => setPaper(e.target.value as PaperSize)}
+            className="text-xs bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-zinc-200"
+          >
+            <option value="none">No paper</option>
+            <option value="A5">A5 — 148×210 mm</option>
+            <option value="A4">A4 — 210×297 mm</option>
+            <option value="A3">A3 — 297×420 mm</option>
+          </select>
+        </div>
+        {paper !== 'none' && (
+          <div className="text-xs text-zinc-500">
+            Image is fitted into a {paper} sheet ({PAPER_DIMS[paper].short}×{PAPER_DIMS[paper].long} mm).
+            Orientation matches the photo.
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-zinc-800 pt-3">
+        <div className="flex items-center justify-between">
+          <div className="text-zinc-200 font-medium text-xs uppercase tracking-wide">Grid</div>
+          <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={grid.enabled}
+              onChange={(e) => setGrid({ enabled: e.target.checked })}
+              className="accent-emerald-500 w-4 h-4"
+            />
+            Enabled
+          </label>
+        </div>
+        <Slider
+          label="Cells (short side)"
+          value={grid.cells}
+          min={8}
+          max={30}
+          step={1}
+          display={(v) => v.toFixed(0)}
+          onChange={(v) => setGrid({ cells: Math.round(v) })}
+        />
+        {cellMm !== null && (
+          <div className="text-xs text-zinc-500">
+            Each cell ≈ <span className="text-zinc-300 font-mono">{cellMm.toFixed(1)} mm</span> on the printed sheet.
+          </div>
+        )}
+        <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer pt-1">
+          <input
+            type="checkbox"
+            checked={grid.diagonals}
+            onChange={(e) => setGrid({ diagonals: e.target.checked })}
+            className="accent-emerald-500 w-4 h-4"
+          />
+          Show diagonals
+        </label>
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-zinc-800 pt-3">
         <div className="text-zinc-200 font-medium text-xs uppercase tracking-wide">Style</div>
         <Slider label="Overlay opacity" value={overlayAlpha} min={0.1} max={1} step={0.02} display={(v) => v.toFixed(2)} onChange={setOverlayAlpha} />
       </div>
@@ -120,6 +190,18 @@ export function Controls() {
         >
           Export PNG
         </button>
+        {errorMessage && (
+          <div className="flex items-start justify-between gap-2 text-xs text-rose-300 bg-rose-950/50 border border-rose-900/60 rounded-md px-2 py-1.5">
+            <span className="leading-snug">{errorMessage}</span>
+            <button
+              onClick={() => setError(null)}
+              className="text-rose-400 hover:text-rose-200 flex-shrink-0"
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="text-xs text-zinc-500 border-t border-zinc-800 pt-3 leading-relaxed">

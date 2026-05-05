@@ -25,18 +25,35 @@ export type OverlayToggles = {
   wireframe: boolean
 }
 
+export type GridSettings = {
+  enabled: boolean
+  cells: number // count along the short side; cells are always SQUARE
+  diagonals: boolean
+}
+
+export type PaperSize = 'none' | 'A5' | 'A4' | 'A3'
+
+export const PAPER_DIMS: Record<Exclude<PaperSize, 'none'>, { short: number; long: number }> = {
+  A5: { short: 148, long: 210 },
+  A4: { short: 210, long: 297 },
+  A3: { short: 297, long: 420 },
+}
+
 type AppState = {
   imageUrl: string | null
   imageEl: HTMLImageElement | null
-  status: 'idle' | 'loading' | 'ready' | 'error'
   errorMessage: string | null
   transform: Transform
   toggles: OverlayToggles
   overlayAlpha: number // 0-1, master opacity for all overlay lines
+  grid: GridSettings
+  paper: PaperSize
   setImage: (url: string, el: HTMLImageElement) => void
-  setStatus: (s: AppState['status'], err?: string | null) => void
+  setError: (msg: string | null) => void
   setTransform: (t: Partial<Transform>) => void
   setOverlayAlpha: (a: number) => void
+  setGrid: (g: Partial<GridSettings>) => void
+  setPaper: (p: PaperSize) => void
   toggle: (key: keyof OverlayToggles) => void
   resetTransform: () => void
   reset: () => void
@@ -67,19 +84,37 @@ const defaultToggles: OverlayToggles = {
   wireframe: false,
 }
 
+const defaultGrid: GridSettings = {
+  enabled: false,
+  cells: 8,
+  diagonals: false,
+}
+
 export const useStore = create<AppState>((set) => ({
   imageUrl: null,
   imageEl: null,
-  status: 'idle',
   errorMessage: null,
   transform: defaultTransform,
   toggles: defaultToggles,
   overlayAlpha: 0.95,
-  setImage: (imageUrl, imageEl) => set({ imageUrl, imageEl, status: 'ready', errorMessage: null }),
-  setStatus: (status, errorMessage = null) => set({ status, errorMessage }),
+  grid: defaultGrid,
+  paper: 'none' as PaperSize,
+  setImage: (imageUrl, imageEl) =>
+    set((s) => {
+      // Revoke previous blob URL so we don't leak object URLs across uploads.
+      if (s.imageUrl && s.imageUrl.startsWith('blob:')) URL.revokeObjectURL(s.imageUrl)
+      return { imageUrl, imageEl, errorMessage: null }
+    }),
+  setError: (errorMessage) => set({ errorMessage }),
   setTransform: (t) => set((s) => ({ transform: { ...s.transform, ...t } })),
   setOverlayAlpha: (overlayAlpha) => set({ overlayAlpha }),
+  setGrid: (g) => set((s) => ({ grid: { ...s.grid, ...g } })),
+  setPaper: (paper) => set({ paper }),
   toggle: (key) => set((s) => ({ toggles: { ...s.toggles, [key]: !s.toggles[key] } })),
   resetTransform: () => set({ transform: defaultTransform }),
-  reset: () => set({ imageUrl: null, imageEl: null, status: 'idle', errorMessage: null, transform: defaultTransform }),
+  reset: () =>
+    set((s) => {
+      if (s.imageUrl && s.imageUrl.startsWith('blob:')) URL.revokeObjectURL(s.imageUrl)
+      return { imageUrl: null, imageEl: null, errorMessage: null, transform: defaultTransform }
+    }),
 }))
